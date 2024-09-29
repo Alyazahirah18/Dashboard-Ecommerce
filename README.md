@@ -21,9 +21,9 @@ Pastikan Anda telah menginstall software berikut:
 
 1. Clone repository ini ke lokal Anda:
    ```bash
-   git clone https://github.com/Alyazahirahh/E-commerce-Dashboard.git
+   git clone https://github.com/Alyazahirah18/Dashboard-Ecommerce.git
 
-   cd E-commerce-Dashboard.git
+   cd Dashboard-Ecommerce.git
 
    pip install -r requirements.txt
 
