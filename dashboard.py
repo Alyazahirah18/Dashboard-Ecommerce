@@ -15,7 +15,7 @@ def load_data():
 orders_df = load_data()
 
 # Streamlit App Title
-st.title("Order Dashboard")
+st.title("E-commerce Dataset Dashboard")
 
 # Sidebar Filters
 st.sidebar.header("Filters")
@@ -31,13 +31,31 @@ filtered_data = orders_df[orders_df["order_status"].isin(status_filter)]
 # Show raw data toggle
 if st.sidebar.checkbox("Tampilkan Data Murni"):
     st.write(filtered_data)
-    
-# Order Status Distribution
-st.subheader("Status distribusi order")
-fig, ax = plt.subplots()
-sns.countplot(data=filtered_data, x='order_status', order=filtered_data['order_status'].value_counts().index, ax=ax)
-plt.xticks(rotation=45)
-st.pyplot(fig)
+
+# Menghitung waktu pengiriman dalam satuan (hari)
+orders_df['delivery_time'] = (orders_df['order_delivered_customer_date'] - orders_df['order_purchase_timestamp']).dt.days
+
+# Menggabungkan order dengan order review untuk menganalisis dampak waktu pengiriman pada review pelanggan
+orderreview = pd.read_csv('order_reviews_dataset.csv')
+merged_df = pd.merge(orders_df[['order_id', 'delivery_time']], 
+                     orderreview[['order_id', 'review_score']], 
+                     on='order_id', how='inner')
+
+# Menghapus baris yang tidak memiliki nilai
+merged_df = merged_df.dropna(subset=['delivery_time', 'review_score'])
+
+# Membuat dashboard menggunakan Streamlit
+st.header('pertanyaan 1: Dashboard Analisis Waktu Pengiriman dan Skor Ulasan')
+
+# Membuat boxplot
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='review_score', y='delivery_time', data=merged_df)
+plt.title('Delivery Time vs. Review Score')
+plt.xlabel('Review Score')
+plt.ylabel('Delivery Time (days)')
+
+# Menampilkan plot di Streamlit
+st.pyplot(plt)
 
 # Delivery Time Distribution
 st.subheader("Distribusi waktu pengiriman (hari)")
@@ -49,6 +67,45 @@ st.pyplot(fig)
 st.subheader("Rata-rata waktu pengiriman tiap order")
 avg_delivery_time = filtered_data.groupby('order_status')['delivery_time'].mean().dropna()
 st.bar_chart(avg_delivery_time)
+
+# Menggabungkan order item dengan order review untuk analisa hubungan
+orderitem = pd.read_csv("order_items_dataset.csv")
+order_item_review = pd.merge(
+    orderitem[['order_id', 'price', 'freight_value']], 
+    orderreview[['order_id', 'review_score']], 
+    on='order_id', how='inner'
+)
+# Membuat dashboard menggunakan Streamlit
+st.header('Pertanyaan 2: Dashboard Analisis Harga, Biaya Pengiriman, dan Skor Ulasan')
+
+# Plotting price and freight value against review score
+plt.figure(figsize=(12, 6))
+
+# Scatter plot for price vs review score
+plt.subplot(1, 2, 1)
+sns.scatterplot(x='price', y='review_score', data=order_item_review, alpha=0.5)
+plt.title('Harga vs. Skor Review')
+plt.xlabel('Harga')
+plt.ylabel('Skor Review')
+
+# Scatter plot for freight value vs review score
+plt.subplot(1, 2, 2)
+sns.scatterplot(x='freight_value', y='review_score', data=order_item_review, alpha=0.5)
+plt.title('Biaya Pengiriman vs. Skor Review')
+plt.xlabel('Biaya Pengiriman')
+plt.ylabel('Skor Review')
+
+plt.tight_layout()
+
+# Menampilkan plot di Streamlit
+st.pyplot(plt)
+
+# Order Status Distribution
+st.subheader("Status distribusi order")
+fig, ax = plt.subplots()
+sns.countplot(data=filtered_data, x='order_status', order=filtered_data['order_status'].value_counts().index, ax=ax)
+plt.xticks(rotation=45)
+st.pyplot(fig)
 
 # Top 5 Customers with Most Orders
 st.subheader("Top 5 customer berdasarkan jumlah order")
